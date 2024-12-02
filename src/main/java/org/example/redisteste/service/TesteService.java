@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 @Service
 public class TesteService {
 
-    @Cacheable("teste")
+    @Cacheable(value = "testes",key = "#id", cacheResolver = "customCacheResolver")
     public String execute(String id) {
         Logger.getGlobal().info("Passou pelo execute");
         return "Teste";

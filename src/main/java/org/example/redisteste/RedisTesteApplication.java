@@ -11,7 +11,6 @@ import org.springframework.cache.annotation.EnableCaching;
 
 
 @SpringBootApplication
-@EnableAutoConfiguration(exclude = {RedisAutoConfiguration.class, RedisRepositoriesAutoConfiguration.class })
 @EnableCaching
 public class RedisTesteApplication {
 

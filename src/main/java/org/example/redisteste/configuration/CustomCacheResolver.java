@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 import org.example.redisteste.CustomCache;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.interceptor.CacheOperationInvocationContext;
@@ -38,6 +39,9 @@ public class CustomCacheResolver implements CacheResolver {
 	}
 
 	private Map<String, String> mapNameConfig = new HashMap<String, String>();
+
+	@Value("${spring.application.name}")
+	private String applicationName;  // Injeção do nome da aplicação
 
 	@Autowired
 	RedisCacheConfigProperties cacheConfigProperties;
@@ -75,12 +79,18 @@ public class CustomCacheResolver implements CacheResolver {
 	private CustomCache cacheWithCustomTTL(String cacheName, Cache cache) {
 		int ttl = namePartOfPrefix(cacheName);
 
-		RedisCache redisCache = (RedisCache) cache;
+		// Adiciona o prefixo com o nome da aplicação
+		String cacheNameWithPrefix = applicationName + ":" + cacheName;
 
+		RedisCache redisCache = (RedisCache) cache;
 		RedisCacheWriter cacheWriter = redisCache.getNativeCache();
+
+		// Configura o TTL
 		RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
 				.entryTtl(Duration.ofSeconds(ttl));
-		CustomCache customCache = new CustomCache(cacheName, cacheWriter, cacheConfig);
+
+		// Cria o cache personalizado com o nome modificado
+		CustomCache customCache = new CustomCache(cacheNameWithPrefix, cacheWriter, cacheConfig);
 		return customCache;
 	}
 
