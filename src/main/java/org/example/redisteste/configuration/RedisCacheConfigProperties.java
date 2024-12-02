@@ -10,13 +10,13 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "redis.cache")
 public class RedisCacheConfigProperties {
 
-    private Map<String, Long> ttl;
+    private Map<String, String> ttl;
 
-    public Map<String, Long> getTtl() {
+    public Map<String, String> getTtl() {
         return ttl;
     }
 
-    public void setTtl(Map<String, Long> ttl) {
+    public void setTtl(Map<String, String> ttl) {
         this.ttl = ttl;
     }
 

@@ -1,50 +1,54 @@
 package org.example.redisteste.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.cache.RedisCacheManager.RedisCacheManagerBuilder;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 @Configuration
-@EnableCaching
 public class RedisConfig {
-    @Autowired
-    private RedisCacheConfigProperties ttls;
 
-    @Bean
-    public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
-        Logger.getLogger("RedisConfig").info("Creating custom cache configuration");
+    @Value("${spring.data.redis.host}")
+    private String cacheHost;
 
-        // Usando streams para transformar o mapa de TTLs em configurações de cache
-        Map<String, RedisCacheConfiguration> cacheNamesConfigurationMap = ttls.getTtl().entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,  // Chave do cache (nome do cache)
-                        entry -> RedisCacheConfiguration.defaultCacheConfig()
-                                .entryTtl(Duration.ofSeconds(entry.getValue()))  // TTL customizado
-                ));
+    @Value("${spring.data.redis.port}")
+    private int cachePort;
 
+    @Bean(name = "redisCacheManager")
+    CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        return RedisCacheManagerBuilder
+                .fromConnectionFactory(connectionFactory).cacheDefaults(RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(30))).build();
 
-
-        return new RedisCacheManager(RedisCacheWriter.lockingRedisCacheWriter(connectionFactory),
-                //set default expiration for all other caches to 300 seconds (optional)
-                RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofSeconds(300)),
-                cacheNamesConfigurationMap);
     }
 
+    @Bean
+    RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setConnectionFactory(connectionFactory);
+
+        return template;
+    }
+
+
+    @Bean
+    RedisConnectionFactory getStandAloneConnFactory() {
+        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(cacheHost,
+                cachePort);
+        return new LettuceConnectionFactory(redisStandaloneConfiguration);
+
+    }
 }
-
-

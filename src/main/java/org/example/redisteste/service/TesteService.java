@@ -15,7 +15,7 @@ public class TesteService {
         return "Teste";
     }
 
-    @Cacheable("order")
+    @Cacheable(value = "orders",key = "#id", cacheResolver = "customCacheResolver")
     public String orders(String id) {
         Logger.getGlobal().info("Passou pelo orders");
         return "Order";
